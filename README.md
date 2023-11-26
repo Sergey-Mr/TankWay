@@ -1,9 +1,12 @@
 # TankWay
-Welcome to TankWay, an exhilarating game developed in Python using the Tkinter library! This project is a part of the coursework for COMP 16321 - Programming 1 at the Univerisity of Manchester.
 
+* [Introduction](#introduction)
 * [Features](#features)
 * [Restrictions](#restrictions)
 * [Technologies](#technologies)
+
+# Intorduction
+Welcome to TankWay, an exhilarating game developed in Python using the Tkinter library! This project is a part of the coursework for COMP 16321 - Programming 1 at the Univerisity of Manchester.
 
 ## Features Included:
 *Immersive Gameplay: Navigate your tank through a dynamic environment, destroying enemy tanks and avoiding their shootings.
