@@ -14,9 +14,6 @@ class GameObject(object):
         self.canvas = canvas
         self.shape = item
 
-    #def get_position(self):
-    #    return self.canvas.coords(self.shape)
-
     def move(self, x, y):
         self.canvas.move(self.shape, x, y)
 
@@ -34,47 +31,17 @@ class GameObject(object):
 
 
 class Tank(GameObject):
-    def __init__(self, canvas, x, y):
-        "Tank`s parameteres"
-        self.canvas = canvas
+    def __init__(self, canvas, x, y, shot_length, width=80, height=80):
+        """Tank's common parameters."""
+        super().__init__(canvas, None)
         self.x = x
         self.y = y
-        self.width = 80
-        self.height = 80
-
-
-class TankEnemy(Tank):
-    def __init__(self, canvas, x, y, main_tank, is_moving, is_shooting):
-        '''Enemy tank`s parameters'''
-        global bullets_enemy
-        super().__init__(canvas, x, y)
-        self.height = y
-        self.is_moving = is_moving
-        self.is_shooting = is_shooting
-
-        # Load the image
-        # The image is take from the web-site https://opengameart.org/content/tank-pack-bleeds-game-art
-        # License: CC BY 3.0 DEED
-        # Creator: Bleed
-        img = Image.open("img/main_character/KV-2_preview.png") 
-        self.tank_image = ImageTk.PhotoImage(img)
-        self.width, self.height = img.size
-
-        self.shot_length = 550
-        self.main_tank = main_tank
-        self.speed = 5
-
-        # Set the image as the tank
-        self.shape = canvas.create_image(x, y, image=self.tank_image, anchor='nw')
-    
-        self.bullets_enemy = []
-
-        self.shoot()  # Start shooting
-        self.move_down()  # Start moving down
-
+        self.width = width
+        self.height = height
+        self.shot_length = shot_length
 
     def shoot(self):
-        '''Shooting logic of the enemy tank'''
+        '''Shooting logic of the tank'''
         global game_flag
         if game_flag == True:
             if self.get_position() is not None:
@@ -88,6 +55,28 @@ class TankEnemy(Tank):
                     if len(self.bullets_enemy) == 0:
                         self.bullets_enemy.append(bullet)
                         self.move_bullet(bullet)  # Start moving the bullet
+ 
+
+class TankEnemy(Tank):
+    def __init__(self, canvas, x, y, main_tank, is_moving, is_shooting):
+        super().__init__(canvas, x, y, shot_length=550)
+        self.main_tank = main_tank
+        self.is_moving = is_moving
+        self.is_shooting = is_shooting
+        self.speed = 5
+        self.bullets_enemy = []
+
+        # Load the image
+        # The image is take from the web-site https://opengameart.org/content/tank-pack-bleeds-game-art
+        # License: CC BY 3.0 DEED
+        # Creator: Bleed
+        img = Image.open("img/main_character/KV-2_preview.png") 
+        self.tank_image = ImageTk.PhotoImage(img)
+        self.width, self.height = img.size
+        self.shape = canvas.create_image(x, y, image=self.tank_image, anchor='nw')
+
+        self.shoot()  # Start shooting
+        self.move_down()  # Start moving down
 
 
     def move_bullet(self, bullet):
@@ -130,25 +119,7 @@ class TankEnemy(Tank):
                     if self in enemy_tanks:
                         self.canvas.delete(self.shape)  # Delete the tank
                         enemy_tanks.remove(self)  # Remove the tank from the list
-
  
-    def get_position(self):
-        '''The top-left and bottom-right corners'''
-        coords = self.canvas.coords(self.shape)
-        if coords:
-            x1, y1 = self.canvas.coords(self.shape)
-            x2, y2 = x1 + self.width, y1 + self.height
-            return [x1, y1, x2, y2]
-        else:
-            return None
-    
-
-    def stop_movement(self):
-        '''Stop the tank'''
-        self.is_moving = False
-        print ('Movement stopped')
-
-
     def stop_shooting(self):
         '''Stop shooting'''
         self.is_shooting = False
@@ -158,25 +129,21 @@ class TankEnemy(Tank):
 
 class TankMain(Tank):
     def __init__(self, canvas, x, y):
-        '''Main tank`s parameters'''
-        super().__init__(canvas, x, y)
-        # Upload the image
+        super().__init__(canvas, x, y, shot_length=400)
+        self.health = [1, 1, 1]
+        self.heart_images = []
+        self.kill_counter = 0
+        self.mainchar_hit = False
+
+        # Load the image
         # The image is taken from https://opengameart.org/content/tank-pack-bleeds-game-art
         # License: CC BY 3.0 DEED
         # Creator: Bleed
         img = Image.open("img/main_character/M-6_preview.png")
         img = img.rotate(180)
         self.tank_image = ImageTk.PhotoImage(img)
-        self.shot_length = 400
 
-        # Set the image as the tank
         self.shape = canvas.create_image(x, y, image=self.tank_image, anchor='nw')
-
-        # Set the health paratemeters and icons
-        self.health = [1, 1, 1]  # defines 3 hearts for player
-        self.heart_images = []
-        self.mainchar_hit = False
-        self.kill_counter = 0
         self.create_health()
 
 
@@ -201,16 +168,12 @@ class TankMain(Tank):
 
 
     def add_health(self):
-        '''Add health to the main tank when 5 enemies are killed'''
+        """Add health to the main tank when a condition is met."""
         if 0 in self.health:
-            self.health.reverse()
             index = self.health.index(0)
-            self.health.pop(index)
-            self.health.append(1)
-            self.health.reverse()
+            self.health[index] = 1
             self.create_health()
-        else:
-            pass
+
 
 
     def create_health(self):
@@ -240,6 +203,7 @@ class TankMain(Tank):
                 heart = heart.subsample(10, 10)
                 self.heart_images.append(heart)
                 canvas.create_image(650 + i*60, 50, image=heart, anchor='nw')
+
 
     def shoot(self, event):
         '''Shooting logic of the main tank'''
@@ -412,16 +376,6 @@ class Bullet(GameObject):
 
                     tank.stop_shooting()
 
-
-    def get_position(self):
-        '''The top-left and bottom-right corners'''
-        if self.canvas.coords(self.shape):
-            x1, y1 = self.canvas.coords(self.shape)
-            x2, y2 = x1 + self.width, y1 + self.height
-            return [x1, y1, x2, y2]
-        else:
-            return None
-
     
     def create_explosion(self, x, y):
         '''Create an explosion at the given coordinates'''
@@ -507,16 +461,6 @@ class Bullet_enemy(Bullet):
                     self.create_explosion(center_x, center_y)
 
 
-    def get_position(self):
-        '''The top-left and bottom-right corners'''
-        if self.canvas.coords(self.shape):
-            x1, y1 = self.canvas.coords(self.shape)
-            x2, y2 = x1 + self.width, y1 + self.height
-            return [x1, y1, x2, y2]
-        else:
-            return None
-
-    
     def create_explosion(self, x, y):
         '''Create an explosion at the given coordinates'''
         global game_flag
@@ -532,22 +476,6 @@ class Bullet_enemy(Bullet):
             # Start the animation
             self.is_exploding = True
             self.animate_explosion(0)
-
-
-    def animate_explosion(self, i):
-        '''Animate the explosion'''
-        if i < len(self.explosion_images):
-            # Update the image
-            self.canvas.itemconfig(self.explosion_id, image=self.explosion_images[i])
-
-            # Schedule the next frame
-            self.canvas.after(65, lambda: self.animate_explosion(i + 1))
-
-        else:
-            # Delete the explosion image object after the animation is complete
-            mainchar_hit = False
-            self.canvas.delete(self.explosion_id)
-            self.delete()
 
 
 def start_game(window, kills=0, timer=0):
@@ -1040,7 +968,7 @@ def boss_key():
     
     # Load the image
     # This is own image and was screenshoted from the LibreOffice Calc
-    img_pictre = Image.open("img/boss_key.png")
+    img_pictre = Image.open("/home/serhii/Documents/Coding/University/COMP16321/16321_python_work_v25523st/img/boss_key.png")
     global bg_picture
     bg_picture = ImageTk.PhotoImage(img_pictre)
 
